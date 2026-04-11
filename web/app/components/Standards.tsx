@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useRef } from 'react'
+import { useState } from 'react'
 
 interface StandardRule {
   label: string
@@ -100,39 +100,39 @@ const STANDARDS: StandardCard[] = [
 function PipelineDiagram({ color, animate }: { color: string; animate: boolean }) {
   const stages = ['Sector', 'Debt', 'Interest', 'Income', 'Tangible']
   return (
-    <svg viewBox="0 0 320 56" className="w-full max-w-xs">
+    <svg viewBox="0 0 540 100" className="w-full" preserveAspectRatio="xMidYMid meet">
       {stages.map((s, i) => {
-        const x = i * 64 + 4
+        const x = i * 108 + 6
         return (
           <g key={s}>
             {i > 0 && (
               <line
-                x1={x - 12} y1="22" x2={x} y2="22"
-                stroke={color} strokeWidth="1.5" strokeOpacity="0.4"
-                strokeDasharray={animate ? '4 3' : 'none'}
+                x1={x - 20} y1="40" x2={x} y2="40"
+                stroke={color} strokeWidth="2" strokeOpacity="0.4"
+                strokeDasharray={animate ? '6 4' : 'none'}
               >
                 {animate && (
-                  <animate attributeName="stroke-dashoffset" from="7" to="0" dur="0.8s" repeatCount="indefinite" />
+                  <animate attributeName="stroke-dashoffset" from="10" to="0" dur="0.8s" repeatCount="indefinite" />
                 )}
               </line>
             )}
             <rect
-              x={x} y="6" width="52" height="32" rx="6"
+              x={x} y="14" width="88" height="52" rx="10"
               fill={color} fillOpacity={animate ? 0.12 : 0.06}
-              stroke={color} strokeWidth="1" strokeOpacity="0.3"
+              stroke={color} strokeWidth="1.5" strokeOpacity="0.3"
             >
               {animate && (
-                <animate attributeName="fill-opacity" values="0.06;0.14;0.06" dur={`${1.2 + i * 0.2}s`} repeatCount="indefinite" />
+                <animate attributeName="fill-opacity" values="0.06;0.16;0.06" dur={`${1.2 + i * 0.2}s`} repeatCount="indefinite" />
               )}
             </rect>
-            <text x={x + 26} y="26" textAnchor="middle" fill={color} fontSize="8" fontFamily="Outfit, sans-serif" fontWeight="500">
+            <text x={x + 44} y="46" textAnchor="middle" fill={color} fontSize="14" fontFamily="Outfit, sans-serif" fontWeight="500">
               {s}
             </text>
           </g>
         )
       })}
-      <text x="160" y="52" textAnchor="middle" fill={color} fontSize="7" fontFamily="Outfit, sans-serif" opacity="0.5">
-        Sequential gate pipeline
+      <text x="270" y="90" textAnchor="middle" fill={color} fontSize="12" fontFamily="Outfit, sans-serif" opacity="0.45">
+        Sequential compliance gate pipeline
       </text>
     </svg>
   )
@@ -140,140 +140,136 @@ function PipelineDiagram({ color, animate }: { color: string; animate: boolean }
 
 function SplitDiagram({ color, animate }: { color: string; animate: boolean }) {
   return (
-    <svg viewBox="0 0 240 80" className="w-full max-w-[200px]">
+    <svg viewBox="0 0 400 150" className="w-full" preserveAspectRatio="xMidYMid meet">
       {/* Center pool */}
-      <circle cx="120" cy="16" r="14" fill={color} fillOpacity="0.1" stroke={color} strokeWidth="1" strokeOpacity="0.3">
-        {animate && <animate attributeName="r" values="13;15;13" dur="2s" repeatCount="indefinite" />}
+      <circle cx="200" cy="30" r="26" fill={color} fillOpacity="0.1" stroke={color} strokeWidth="1.5" strokeOpacity="0.3">
+        {animate && <animate attributeName="r" values="24;28;24" dur="2s" repeatCount="indefinite" />}
       </circle>
-      <text x="120" y="19" textAnchor="middle" fill={color} fontSize="7" fontFamily="Outfit, sans-serif" fontWeight="600">Capital</text>
+      <text x="200" y="34" textAnchor="middle" fill={color} fontSize="14" fontFamily="Outfit, sans-serif" fontWeight="600">Capital</text>
 
       {/* Split lines */}
-      <line x1="108" y1="28" x2="70" y2="48" stroke={color} strokeWidth="1" strokeOpacity="0.4">
+      <line x1="178" y1="52" x2="120" y2="82" stroke={color} strokeWidth="2" strokeOpacity="0.4">
         {animate && <animate attributeName="stroke-opacity" values="0.2;0.5;0.2" dur="1.5s" repeatCount="indefinite" />}
       </line>
-      <line x1="132" y1="28" x2="170" y2="48" stroke={color} strokeWidth="1" strokeOpacity="0.4">
+      <line x1="222" y1="52" x2="280" y2="82" stroke={color} strokeWidth="2" strokeOpacity="0.4">
         {animate && <animate attributeName="stroke-opacity" values="0.2;0.5;0.2" dur="1.5s" begin="0.3s" repeatCount="indefinite" />}
       </line>
 
       {/* Partner A */}
-      <rect x="36" y="44" width="68" height="28" rx="6" fill={color} fillOpacity="0.08" stroke={color} strokeWidth="1" strokeOpacity="0.25" />
-      <text x="70" y="57" textAnchor="middle" fill={color} fontSize="7" fontFamily="Outfit, sans-serif" fontWeight="500">Partner A</text>
-      <text x="70" y="67" textAnchor="middle" fill={color} fontSize="6" fontFamily="Outfit, sans-serif" opacity="0.6">Profit + Loss</text>
+      <rect x="52" y="80" width="136" height="52" rx="10" fill={color} fillOpacity="0.08" stroke={color} strokeWidth="1.5" strokeOpacity="0.25" />
+      <text x="120" y="104" textAnchor="middle" fill={color} fontSize="14" fontFamily="Outfit, sans-serif" fontWeight="500">Partner A</text>
+      <text x="120" y="122" textAnchor="middle" fill={color} fontSize="12" fontFamily="Outfit, sans-serif" opacity="0.55">Profit + Loss shared</text>
 
       {/* Partner B */}
-      <rect x="136" y="44" width="68" height="28" rx="6" fill={color} fillOpacity="0.08" stroke={color} strokeWidth="1" strokeOpacity="0.25" />
-      <text x="170" y="57" textAnchor="middle" fill={color} fontSize="7" fontFamily="Outfit, sans-serif" fontWeight="500">Partner B</text>
-      <text x="170" y="67" textAnchor="middle" fill={color} fontSize="6" fontFamily="Outfit, sans-serif" opacity="0.6">Profit + Loss</text>
+      <rect x="212" y="80" width="136" height="52" rx="10" fill={color} fillOpacity="0.08" stroke={color} strokeWidth="1.5" strokeOpacity="0.25" />
+      <text x="280" y="104" textAnchor="middle" fill={color} fontSize="14" fontFamily="Outfit, sans-serif" fontWeight="500">Partner B</text>
+      <text x="280" y="122" textAnchor="middle" fill={color} fontSize="12" fontFamily="Outfit, sans-serif" opacity="0.55">Profit + Loss shared</text>
     </svg>
   )
 }
 
 function FlowDiagram({ color, animate }: { color: string; animate: boolean }) {
   return (
-    <svg viewBox="0 0 260 80" className="w-full max-w-[220px]">
-      {/* Investor */}
-      <rect x="4" y="24" width="72" height="32" rx="6" fill={color} fillOpacity="0.1" stroke={color} strokeWidth="1" strokeOpacity="0.3" />
-      <text x="40" y="38" textAnchor="middle" fill={color} fontSize="7" fontFamily="Outfit, sans-serif" fontWeight="600">Rabb al-Mal</text>
-      <text x="40" y="48" textAnchor="middle" fill={color} fontSize="6" fontFamily="Outfit, sans-serif" opacity="0.5">(Capital)</text>
+    <svg viewBox="0 0 480 130" className="w-full" preserveAspectRatio="xMidYMid meet">
+      {/* Label */}
+      <text x="240" y="16" textAnchor="middle" fill={color} fontSize="12" fontFamily="Outfit, sans-serif" opacity="0.45">
+        Capital + Labor = Shared Profit
+      </text>
 
-      {/* Arrow */}
-      <line x1="80" y1="40" x2="108" y2="40" stroke={color} strokeWidth="1.5" strokeOpacity="0.4" markerEnd="url(#arrow-flow)">
-        {animate && <animate attributeName="stroke-dashoffset" from="8" to="0" dur="1s" repeatCount="indefinite" />}
-      </line>
+      {/* Investor */}
+      <rect x="8" y="34" width="132" height="60" rx="10" fill={color} fillOpacity="0.1" stroke={color} strokeWidth="1.5" strokeOpacity="0.3" />
+      <text x="74" y="60" textAnchor="middle" fill={color} fontSize="15" fontFamily="Outfit, sans-serif" fontWeight="600">Rabb al-Mal</text>
+      <text x="74" y="80" textAnchor="middle" fill={color} fontSize="12" fontFamily="Outfit, sans-serif" opacity="0.5">(Capital Provider)</text>
+
+      {/* Arrow 1 */}
+      <line x1="148" y1="64" x2="178" y2="64" stroke={color} strokeWidth="2" strokeOpacity="0.4" />
+      <polygon points="176,58 186,64 176,70" fill={color} fillOpacity="0.4" />
       {animate && (
-        <circle cx="94" cy="40" r="2" fill={color} fillOpacity="0.6">
-          <animate attributeName="cx" from="80" to="108" dur="1.2s" repeatCount="indefinite" />
+        <circle cx="148" cy="64" r="3.5" fill={color} fillOpacity="0.6">
+          <animate attributeName="cx" from="148" to="178" dur="1.2s" repeatCount="indefinite" />
           <animate attributeName="opacity" values="0;1;0" dur="1.2s" repeatCount="indefinite" />
         </circle>
       )}
 
       {/* Mudarib */}
-      <rect x="112" y="24" width="72" height="32" rx="6" fill={color} fillOpacity="0.1" stroke={color} strokeWidth="1" strokeOpacity="0.3" />
-      <text x="148" y="38" textAnchor="middle" fill={color} fontSize="7" fontFamily="Outfit, sans-serif" fontWeight="600">Mudarib</text>
-      <text x="148" y="48" textAnchor="middle" fill={color} fontSize="6" fontFamily="Outfit, sans-serif" opacity="0.5">(Expertise)</text>
+      <rect x="190" y="34" width="132" height="60" rx="10" fill={color} fillOpacity="0.1" stroke={color} strokeWidth="1.5" strokeOpacity="0.3" />
+      <text x="256" y="60" textAnchor="middle" fill={color} fontSize="15" fontFamily="Outfit, sans-serif" fontWeight="600">Mudarib</text>
+      <text x="256" y="80" textAnchor="middle" fill={color} fontSize="12" fontFamily="Outfit, sans-serif" opacity="0.5">(Entrepreneur)</text>
 
-      {/* Arrow to profit */}
-      <line x1="188" y1="40" x2="216" y2="40" stroke={color} strokeWidth="1.5" strokeOpacity="0.4" />
+      {/* Arrow 2 */}
+      <line x1="330" y1="64" x2="360" y2="64" stroke={color} strokeWidth="2" strokeOpacity="0.4" />
+      <polygon points="358,58 368,64 358,70" fill={color} fillOpacity="0.4" />
 
       {/* Profit */}
-      <rect x="220" y="24" width="36" height="32" rx="16" fill={color} fillOpacity="0.15" stroke={color} strokeWidth="1" strokeOpacity="0.4">
-        {animate && <animate attributeName="fill-opacity" values="0.08;0.18;0.08" dur="2s" repeatCount="indefinite" />}
+      <rect x="372" y="34" width="100" height="60" rx="30" fill={color} fillOpacity="0.15" stroke={color} strokeWidth="1.5" strokeOpacity="0.4">
+        {animate && <animate attributeName="fill-opacity" values="0.08;0.2;0.08" dur="2s" repeatCount="indefinite" />}
       </rect>
-      <text x="238" y="44" textAnchor="middle" fill={color} fontSize="7" fontFamily="Outfit, sans-serif" fontWeight="600">Profit</text>
+      <text x="422" y="70" textAnchor="middle" fill={color} fontSize="16" fontFamily="Outfit, sans-serif" fontWeight="600">Profit</text>
 
-      {/* Labels */}
-      <text x="130" y="12" textAnchor="middle" fill={color} fontSize="6" fontFamily="Outfit, sans-serif" opacity="0.4">
-        Capital + Labor → Shared Profit
-      </text>
-      <text x="94" y="72" textAnchor="middle" fill={color} fontSize="6" fontFamily="Outfit, sans-serif" opacity="0.4">
-        Loss → Investor only
+      {/* Loss label */}
+      <text x="240" y="120" textAnchor="middle" fill={color} fontSize="12" fontFamily="Outfit, sans-serif" opacity="0.4">
+        Loss borne by investor only (unless Mudarib is negligent)
       </text>
     </svg>
   )
 }
 
 function ThresholdDiagram({ color, animate }: { color: string; animate: boolean }) {
-  const barHeight = 40
-  const nisabX = 120
   return (
-    <svg viewBox="0 0 260 70" className="w-full max-w-[220px]">
+    <svg viewBox="0 0 460 110" className="w-full" preserveAspectRatio="xMidYMid meet">
       {/* Bar track */}
-      <rect x="20" y="16" width="220" height="24" rx="4" fill={color} fillOpacity="0.05" stroke={color} strokeWidth="0.5" strokeOpacity="0.2" />
+      <rect x="30" y="30" width="400" height="40" rx="8" fill={color} fillOpacity="0.05" stroke={color} strokeWidth="1" strokeOpacity="0.2" />
 
       {/* Filled portion */}
-      <rect x="20" y="16" width={animate ? '160' : '0'} height="24" rx="4" fill={color} fillOpacity="0.12">
-        {animate && <animate attributeName="width" from="0" to="160" dur="1s" fill="freeze" />}
+      <rect x="30" y="30" width={animate ? '290' : '0'} height="40" rx="8" fill={color} fillOpacity="0.12">
+        {animate && <animate attributeName="width" from="0" to="290" dur="1s" fill="freeze" />}
       </rect>
 
       {/* Nisab line */}
-      <line x1={nisabX} y1="10" x2={nisabX} y2={barHeight + 4} stroke={color} strokeWidth="1.5" strokeDasharray="3 2" strokeOpacity="0.6" />
-      <text x={nisabX} y="8" textAnchor="middle" fill={color} fontSize="7" fontFamily="Outfit, sans-serif" fontWeight="600">Nisab</text>
-      <text x={nisabX} y="56" textAnchor="middle" fill={color} fontSize="6" fontFamily="Outfit, sans-serif" opacity="0.5">85g Gold</text>
+      <line x1="220" y1="20" x2="220" y2="78" stroke={color} strokeWidth="2" strokeDasharray="5 3" strokeOpacity="0.6" />
+      <text x="220" y="14" textAnchor="middle" fill={color} fontSize="14" fontFamily="Outfit, sans-serif" fontWeight="600">Nisab</text>
+      <text x="220" y="96" textAnchor="middle" fill={color} fontSize="12" fontFamily="Outfit, sans-serif" opacity="0.5">85 grams of gold</text>
 
       {/* Below / Above labels */}
-      <text x="70" y="32" textAnchor="middle" fill={color} fontSize="7" fontFamily="Outfit, sans-serif" opacity="0.5">No Zakah</text>
-      <text x="190" y="32" textAnchor="middle" fill={color} fontSize="7" fontFamily="Outfit, sans-serif" fontWeight="500">2.5% Due</text>
-
-      <text x="130" y="68" textAnchor="middle" fill={color} fontSize="6" fontFamily="Outfit, sans-serif" opacity="0.35">
-        Net assets must exceed Nisab threshold
-      </text>
+      <text x="125" y="56" textAnchor="middle" fill={color} fontSize="14" fontFamily="Outfit, sans-serif" opacity="0.5">No Zakah</text>
+      <text x="340" y="56" textAnchor="middle" fill={color} fontSize="14" fontFamily="Outfit, sans-serif" fontWeight="600">2.5% Due</text>
     </svg>
   )
 }
 
 function ScaleDiagram({ color, animate }: { color: string; animate: boolean }) {
   return (
-    <svg viewBox="0 0 240 80" className="w-full max-w-[200px]">
+    <svg viewBox="0 0 420 150" className="w-full" preserveAspectRatio="xMidYMid meet">
       {/* Fulcrum */}
-      <polygon points="120,68 112,78 128,78" fill={color} fillOpacity="0.3" />
+      <polygon points="210,125 196,145 224,145" fill={color} fillOpacity="0.3" />
 
       {/* Beam */}
-      <line x1="40" y1="44" x2="200" y2="44" stroke={color} strokeWidth="1.5" strokeOpacity="0.4">
+      <line x1="60" y1="80" x2="360" y2="80" stroke={color} strokeWidth="2.5" strokeOpacity="0.35">
         {animate && (
-          <animateTransform attributeName="transform" type="rotate" values="-2 120 44;2 120 44;-2 120 44" dur="3s" repeatCount="indefinite" />
+          <animateTransform attributeName="transform" type="rotate" values="-2 210 80;2 210 80;-2 210 80" dur="3s" repeatCount="indefinite" />
         )}
       </line>
 
       {/* Left pan - Rain */}
       <g>
         {animate && (
-          <animateTransform attributeName="transform" type="translate" values="0 0;0 -2;0 0" dur="3s" repeatCount="indefinite" />
+          <animateTransform attributeName="transform" type="translate" values="0 0;0 -4;0 0" dur="3s" repeatCount="indefinite" />
         )}
-        <line x1="40" y1="44" x2="40" y2="30" stroke={color} strokeWidth="1" strokeOpacity="0.3" />
-        <rect x="12" y="10" width="56" height="24" rx="6" fill={color} fillOpacity="0.1" stroke={color} strokeWidth="1" strokeOpacity="0.25" />
-        <text x="40" y="22" textAnchor="middle" fill={color} fontSize="7" fontFamily="Outfit, sans-serif" fontWeight="500">Rain-Fed</text>
-        <text x="40" y="30" textAnchor="middle" fill={color} fontSize="8" fontFamily="Outfit, sans-serif" fontWeight="700">10%</text>
+        <line x1="70" y1="80" x2="70" y2="52" stroke={color} strokeWidth="1.5" strokeOpacity="0.3" />
+        <rect x="16" y="10" width="108" height="46" rx="10" fill={color} fillOpacity="0.1" stroke={color} strokeWidth="1.5" strokeOpacity="0.25" />
+        <text x="70" y="32" textAnchor="middle" fill={color} fontSize="13" fontFamily="Outfit, sans-serif" fontWeight="500">Rain-Fed</text>
+        <text x="70" y="50" textAnchor="middle" fill={color} fontSize="18" fontFamily="Outfit, sans-serif" fontWeight="700">10%</text>
       </g>
 
       {/* Right pan - Mechanical */}
       <g>
         {animate && (
-          <animateTransform attributeName="transform" type="translate" values="0 0;0 2;0 0" dur="3s" repeatCount="indefinite" />
+          <animateTransform attributeName="transform" type="translate" values="0 0;0 4;0 0" dur="3s" repeatCount="indefinite" />
         )}
-        <line x1="200" y1="44" x2="200" y2="30" stroke={color} strokeWidth="1" strokeOpacity="0.3" />
-        <rect x="172" y="10" width="56" height="24" rx="6" fill={color} fillOpacity="0.1" stroke={color} strokeWidth="1" strokeOpacity="0.25" />
-        <text x="200" y="22" textAnchor="middle" fill={color} fontSize="7" fontFamily="Outfit, sans-serif" fontWeight="500">Mechanical</text>
-        <text x="200" y="30" textAnchor="middle" fill={color} fontSize="8" fontFamily="Outfit, sans-serif" fontWeight="700">5%</text>
+        <line x1="350" y1="80" x2="350" y2="52" stroke={color} strokeWidth="1.5" strokeOpacity="0.3" />
+        <rect x="296" y="10" width="108" height="46" rx="10" fill={color} fillOpacity="0.1" stroke={color} strokeWidth="1.5" strokeOpacity="0.25" />
+        <text x="350" y="32" textAnchor="middle" fill={color} fontSize="13" fontFamily="Outfit, sans-serif" fontWeight="500">Mechanical</text>
+        <text x="350" y="50" textAnchor="middle" fill={color} fontSize="18" fontFamily="Outfit, sans-serif" fontWeight="700">5%</text>
       </g>
     </svg>
   )
@@ -287,12 +283,12 @@ const DIAGRAM_MAP = {
   scale: ScaleDiagram,
 }
 
-// ─── Card Component ─────────────────────────────────────────────────
+// ─── Helpers ────────────────────────────────────────────────────────
 
 function ChevronIcon({ open }: { open: boolean }) {
   return (
     <svg
-      width="16" height="16" viewBox="0 0 16 16"
+      width="20" height="20" viewBox="0 0 16 16"
       fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"
       className="flex-shrink-0 transition-transform duration-300"
       style={{ transform: open ? 'rotate(180deg)' : 'rotate(0deg)' }}
@@ -318,18 +314,18 @@ export default function Standards() {
 
   return (
     <div>
-      <div className="mb-8">
-        <h2 className="font-display text-2xl sm:text-3xl font-light text-heading mb-2">
+      <div className="mb-10">
+        <h2 className="font-display text-3xl sm:text-4xl font-light text-heading mb-3">
           AAOIFI Shari&rsquo;ah Standards
         </h2>
-        <p className="text-body text-sm sm:text-base leading-relaxed max-w-2xl">
+        <p className="text-body text-base sm:text-lg leading-relaxed max-w-2xl">
           The compliance engine enforces five standards from the AAOIFI Shari&rsquo;ah Standards
           (2017 Edition). Each standard defines specific rules and thresholds that financial
           instruments must satisfy.
         </p>
       </div>
 
-      <div className="space-y-4">
+      <div className="space-y-5">
         {STANDARDS.map((std, i) => {
           const open = expanded.has(std.id)
           const Diagram = DIAGRAM_MAP[std.diagram]
@@ -346,22 +342,22 @@ export default function Standards() {
             >
               <button
                 onClick={() => toggle(std.id)}
-                className="w-full text-left px-5 py-4 sm:px-6 sm:py-5 flex items-start gap-4 cursor-pointer"
+                className="w-full text-left px-6 py-5 sm:px-8 sm:py-6 flex items-start gap-4 cursor-pointer"
                 aria-expanded={open}
               >
                 <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-3 mb-1">
+                  <div className="flex items-center gap-3 mb-1.5">
                     <span
-                      className="text-xs font-semibold tracking-wider uppercase px-2 py-0.5 rounded"
+                      className="text-sm font-semibold tracking-wider uppercase px-2.5 py-1 rounded"
                       style={{ background: `${std.color}20`, color: std.color }}
                     >
                       {std.title}
                     </span>
-                    <span className="text-label text-sm font-medium truncate">
+                    <span className="text-label text-base font-medium truncate">
                       {std.subtitle}
                     </span>
                   </div>
-                  <p className="text-dim text-sm leading-relaxed">{std.summary}</p>
+                  <p className="text-dim text-base leading-relaxed">{std.summary}</p>
                 </div>
                 <div className="text-label mt-1">
                   <ChevronIcon open={open} />
@@ -370,21 +366,23 @@ export default function Standards() {
 
               <div
                 className="standard-expand-content"
-                style={{ maxHeight: open ? '800px' : '0px', opacity: open ? 1 : 0 }}
+                style={{ maxHeight: open ? '1000px' : '0px', opacity: open ? 1 : 0 }}
               >
-                <div className="px-5 pb-5 sm:px-6 sm:pb-6 pt-0">
+                <div className="px-6 pb-6 sm:px-8 sm:pb-8 pt-0">
                   {/* Diagram */}
-                  <div className="flex justify-center py-4 mb-4 rounded-lg" style={{ background: `${std.color}08` }}>
-                    <Diagram color={std.color} animate={open} />
+                  <div className="py-6 sm:py-8 mb-5 rounded-lg" style={{ background: `${std.color}08` }}>
+                    <div className="px-4 sm:px-8">
+                      <Diagram color={std.color} animate={open} />
+                    </div>
                   </div>
 
                   {/* Rationale */}
-                  <div className="rounded-lg p-4 mb-4" style={{ background: `${std.color}0a` }}>
-                    <p className="text-body text-sm leading-relaxed italic">{std.rationale}</p>
+                  <div className="rounded-lg p-5 mb-5" style={{ background: `${std.color}0a` }}>
+                    <p className="text-body text-base leading-relaxed italic">{std.rationale}</p>
                   </div>
 
                   {/* Rules */}
-                  <div className="space-y-3">
+                  <div className="space-y-4">
                     {std.rules.map((rule, ri) => (
                       <div
                         key={ri}
@@ -392,22 +390,22 @@ export default function Standards() {
                         style={{ animation: open ? `slideIn 0.25s ease-out ${ri * 60}ms both` : 'none' }}
                       >
                         <div
-                          className="w-1.5 rounded-full flex-shrink-0 mt-1"
-                          style={{ background: std.color, height: '16px' }}
+                          className="w-1.5 rounded-full flex-shrink-0 mt-1.5"
+                          style={{ background: std.color, height: '18px' }}
                         />
                         <div className="flex-1">
-                          <div className="flex items-baseline gap-2">
-                            <p className="text-heading text-sm font-medium mb-0.5">{rule.label}</p>
+                          <div className="flex items-baseline gap-2.5">
+                            <p className="text-heading text-base font-medium mb-0.5">{rule.label}</p>
                             {rule.value && (
                               <span
-                                className="text-xs font-semibold px-1.5 py-0.5 rounded"
+                                className="text-sm font-semibold px-2 py-0.5 rounded"
                                 style={{ background: `${std.color}18`, color: std.color }}
                               >
                                 {rule.value}
                               </span>
                             )}
                           </div>
-                          <p className="text-dim text-sm leading-relaxed">{rule.detail}</p>
+                          <p className="text-dim text-base leading-relaxed">{rule.detail}</p>
                         </div>
                       </div>
                     ))}
@@ -419,8 +417,8 @@ export default function Standards() {
         })}
       </div>
 
-      <div className="mt-8 text-center">
-        <p className="text-ghost text-xs">
+      <div className="mt-10 text-center">
+        <p className="text-ghost text-sm">
           Source: AAOIFI Shari&rsquo;ah Standards, 2017 Edition &middot; Standards 12, 13, 21, 35, 50
         </p>
       </div>
