@@ -80,6 +80,8 @@ export default function StockScreener() {
       const data = await res.json()
       if (data.error) throw new Error(data.error)
       setReport(data)
+      // Skip cooldown if the result came from Supabase cache (no Yahoo API call was made)
+      if (mode === 'ticker' && !data.cached) startCooldown()
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : 'Screening failed'
       if (msg.includes('temporarily unavailable') || msg.includes('429')) {
@@ -87,9 +89,9 @@ export default function StockScreener() {
       } else {
         setError(msg)
       }
+      if (mode === 'ticker') startCooldown()
     } finally {
       setLoading(false)
-      if (mode === 'ticker') startCooldown()
     }
   }, [mode, ticker, manual, isCooling, startCooldown])
 

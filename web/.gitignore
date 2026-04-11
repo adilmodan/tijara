@@ -4,3 +4,7 @@ out/
 .vercel
 *.tsbuildinfo
 next-env.d.ts
+
+# Environment secrets
+.env.local
+.env*.local

@@ -3,17 +3,18 @@
 import { useState } from 'react'
 import Link from 'next/link'
 import StockScreener from './components/StockScreener'
-import ContractValidator from './components/ContractValidator'
 import ZakahCalculator from './components/ZakahCalculator'
+import Standards from './components/Standards'
 import About from './components/About'
 import ThemeToggle from './components/ThemeToggle'
+import NewsletterPopup from './components/NewsletterPopup'
 
-type Tab = 'stock' | 'contract' | 'zakah' | 'about'
+type Tab = 'stock' | 'zakah' | 'standards' | 'about'
 
 const TAB_LABELS: Record<Tab, string> = {
   stock: 'Equity Screening',
-  contract: 'Contract Validation',
   zakah: 'Zakah Engine',
+  standards: 'Standards',
   about: 'About',
 }
 
@@ -23,6 +24,7 @@ export default function Home() {
 
   return (
     <main className="min-h-screen flex flex-col">
+      <NewsletterPopup />
       {/* Disclaimer banner */}
       <div className="bg-gold/[0.06] border-b border-gold/10">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 py-1.5 sm:py-2.5 text-center">
@@ -55,7 +57,7 @@ export default function Home() {
               </p>
               <p className="text-ghost text-xs mt-2 max-w-lg leading-relaxed hidden sm:block">
                 Binary compliance verification against AAOIFI Shari&rsquo;ah Standards (2017 Edition).
-                Equity screening per SS (21) &middot; Contract validation per SS (12/13) &middot; Zakah computation per SS (35/50).
+                Equity screening per SS (21) &middot; Zakah computation per SS (35/50) &middot; Standards reference per SS (12/13).
               </p>
             </div>
             </div>
@@ -114,8 +116,8 @@ export default function Home() {
       <div className="max-w-6xl mx-auto px-4 sm:px-6 py-6 sm:py-10 flex-1 w-full">
         <div className="animate-fade-in">
           {activeTab === 'stock' && <StockScreener />}
-          {activeTab === 'contract' && <ContractValidator />}
           {activeTab === 'zakah' && <ZakahCalculator />}
+          {activeTab === 'standards' && <Standards />}
           {activeTab === 'about' && <About />}
         </div>
       </div>

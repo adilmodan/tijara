@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { screenFinancials } from '@/lib/engine'
+import { supabase } from '@/lib/supabase'
 import type { CompanyFinancials } from '@/lib/types'
 
 const USER_AGENTS = [
@@ -144,6 +145,30 @@ async function fetchData(ticker: string) {
   return { summary, ts }
 }
 
+// ─── Cache Helpers ──────────────────────────────────────────────────
+
+const CACHE_TTL_DAYS = 7
+
+async function getCachedReport(ticker: string) {
+  if (!supabase) return null
+  const cutoff = new Date(Date.now() - CACHE_TTL_DAYS * 24 * 60 * 60 * 1000).toISOString()
+  const { data } = await supabase
+    .from('screening_cache')
+    .select('report')
+    .eq('ticker', ticker)
+    .gte('cached_at', cutoff)
+    .single()
+  return data?.report ?? null
+}
+
+async function cacheReport(ticker: string, report: Record<string, unknown>, financials: Record<string, unknown>) {
+  if (!supabase) return
+  await supabase.from('screening_cache').upsert(
+    { ticker, report, financials, cached_at: new Date().toISOString() },
+    { onConflict: 'ticker' },
+  )
+}
+
 // ─── Route Handler ───────────────────────────────────────────────────
 
 export async function POST(request: Request) {
@@ -156,6 +181,14 @@ export async function POST(request: Request) {
     if (manual) {
       financials = body.financials as CompanyFinancials
     } else {
+      const upperTicker = ticker.toUpperCase()
+
+      // Check Supabase cache first
+      const cached = await getCachedReport(upperTicker)
+      if (cached) {
+        return NextResponse.json({ ...cached, cached: true })
+      }
+
       let result: { summary: Record<string, any> | null; ts: Record<string, number> }
 
       try {
@@ -230,6 +263,12 @@ export async function POST(request: Request) {
     }
 
     const report = screenFinancials(financials)
+
+    // Cache the result for ticker-based lookups (not manual input)
+    if (!manual) {
+      cacheReport(financials.ticker, report as unknown as Record<string, unknown>, financials as unknown as Record<string, unknown>).catch(() => {})
+    }
+
     return NextResponse.json(report)
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : 'Screening failed'
