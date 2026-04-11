@@ -10,8 +10,7 @@ import {
 } from '@/lib/constants'
 import ViolationList from './ViolationList'
 
-const COOLDOWN_MS = 5_000
-const STARTUP_COOLDOWN_MS = 10_000
+const COOLDOWN_MS = 3_000
 
 export default function StockScreener() {
   const [mode, setMode] = useState<'ticker' | 'manual'>('ticker')
@@ -21,8 +20,8 @@ export default function StockScreener() {
   const [error, setError] = useState('')
 
   // Cooldown: 10s on startup, 5s after each ticker search
-  const [cooldownEnd, setCooldownEnd] = useState(() => Date.now() + STARTUP_COOLDOWN_MS)
-  const [cooldownMs, setCooldownMs] = useState(STARTUP_COOLDOWN_MS)
+  const [cooldownEnd, setCooldownEnd] = useState(0)
+  const [cooldownMs, setCooldownMs] = useState(COOLDOWN_MS)
   const [, rerender] = useState(0)
   const isCooling = cooldownEnd > Date.now()
 
