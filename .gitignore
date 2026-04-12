@@ -1,8 +1,11 @@
+# Environment / secrets
+.env
+.env.*
+.env.local
+*.local
+
 # Claude
 .claude/
-
-# Docs
-docs/
 
 # Python
 __pycache__/
@@ -10,13 +13,8 @@ __pycache__/
 *.pyo
 *.egg-info/
 .venv/
-
-# Environment / secrets
-.env
-.env.*
-
-# macOS
-.DS_Store
+build/
+dist/
 
 # Node / Next.js
 node_modules/
@@ -30,3 +28,15 @@ next-env.d.ts
 
 # uv
 uv.lock
+
+# macOS
+.DS_Store
+*.sync-conflict*
+Screenshot*.png
+
+# Large reference docs (keep locally, not in repo)
+*.pdf
+
+# Package lock (regenerated on install)
+package-lock.json
+.vercel

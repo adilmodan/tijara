@@ -12,7 +12,7 @@ import ViolationList from './ViolationList'
 
 const COOLDOWN_MS = 3_000
 
-export default function StockScreener() {
+export default function StockScreener({ fast = false }: { fast?: boolean } = {}) {
   const [mode, setMode] = useState<'ticker' | 'manual'>('ticker')
   const [ticker, setTicker] = useState('')
   const [loading, setLoading] = useState(false)
@@ -32,8 +32,9 @@ export default function StockScreener() {
     return () => clearInterval(id)
   }, [cooldownEnd])
 
-  // Warm up Yahoo Finance: fire at 0s, 3s, and 6s
+  // Warm up Yahoo Finance: fire at 0s, 3s, and 6s (skip in fast mode)
   useEffect(() => {
+    if (fast) return
     const warmup = () =>
       fetch('/api/screen', {
         method: 'POST',
@@ -45,7 +46,7 @@ export default function StockScreener() {
     const id3 = setTimeout(warmup, 3_000)
     const id6 = setTimeout(warmup, 6_000)
     return () => { clearTimeout(id3); clearTimeout(id6) }
-  }, [])
+  }, [fast])
 
   const startCooldown = useCallback(() => {
     setCooldownMs(COOLDOWN_MS)
@@ -60,14 +61,14 @@ export default function StockScreener() {
   })
 
   const handleScreen = useCallback(async () => {
-    if (isCooling) return
+    if (!fast && isCooling) return
     setLoading(true)
     setError('')
     setReport(null)
 
     try {
       const body = mode === 'ticker'
-        ? { ticker: ticker.toUpperCase(), manual: false }
+        ? { ticker: ticker.toUpperCase(), manual: false, ...(fast && { fast: true }) }
         : { manual: true, financials: { ...manual, ticker: manual.ticker || 'MANUAL' } }
 
       const res = await fetch('/api/screen', {
@@ -79,8 +80,8 @@ export default function StockScreener() {
       const data = await res.json()
       if (data.error) throw new Error(data.error)
       setReport(data)
-      // Skip cooldown if the result came from Supabase cache (no Yahoo API call was made)
-      if (mode === 'ticker' && !data.cached) startCooldown()
+      // Skip cooldown if fast mode or result came from Supabase cache
+      if (!fast && mode === 'ticker' && !data.cached) startCooldown()
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : 'Screening failed'
       if (msg.includes('temporarily unavailable') || msg.includes('429')) {
@@ -88,11 +89,11 @@ export default function StockScreener() {
       } else {
         setError(msg)
       }
-      if (mode === 'ticker') startCooldown()
+      if (!fast && mode === 'ticker') startCooldown()
     } finally {
       setLoading(false)
     }
-  }, [mode, ticker, manual, isCooling, startCooldown])
+  }, [mode, ticker, manual, fast, isCooling, startCooldown])
 
   const cooldownSeconds = Math.ceil((cooldownEnd - Date.now()) / 1000)
 
@@ -229,6 +230,12 @@ export default function StockScreener() {
             View {report.ticker} financials on Yahoo Finance
           </a>
 
+          {report.screened_at && (
+            <div className="text-ghost text-xs">
+              Data as of {new Date(report.screened_at).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}
+            </div>
+          )}
+
           <div className="card p-6">
             <h3 className="text-label text-xs uppercase tracking-wider mb-4">Financial Data</h3>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
@@ -247,16 +254,12 @@ export default function StockScreener() {
                 />
                 <Metric
                   label="Interest Dep. / Market Cap"
-                  value={pct(report.financials.interest_bearing_deposits / report.financials.market_cap)}
-                  threshold={`≤ ${INTEREST_DEPOSIT_THRESHOLD * 100}%`}
-                  pass={report.financials.interest_bearing_deposits / report.financials.market_cap <= INTEREST_DEPOSIT_THRESHOLD}
+                  {...ratioMetric(report.financials.interest_bearing_deposits, report.financials.market_cap, INTEREST_DEPOSIT_THRESHOLD, 'Interest Dep. / Market Cap', '<=')}
                 />
                 {report.financials.total_income > 0 && (
                   <Metric
                     label="Prohibited / Total Income"
-                    value={pct(report.financials.prohibited_income / report.financials.total_income)}
-                    threshold={`≤ ${PROHIBITED_INCOME_CAP * 100}%`}
-                    pass={report.financials.prohibited_income / report.financials.total_income <= PROHIBITED_INCOME_CAP}
+                    {...ratioMetric(report.financials.prohibited_income, report.financials.total_income, PROHIBITED_INCOME_CAP, 'Prohibited / Total Income', '<=')}
                     subtitle={report.financials.prohibited_income_source || undefined}
                   />
                 )}
@@ -415,4 +418,17 @@ function fmt(n: number): string {
 
 function pct(n: number): string {
   return `${(n * 100).toFixed(2)}%`
+}
+
+// Ratio display: shows "—" when the numerator is zero (data not reported by Yahoo)
+function ratioMetric(numerator: number, denominator: number, threshold: number, label: string, op: '<=' | '>='): {
+  value: string; threshold: string | undefined; pass: boolean | undefined
+} {
+  if (numerator === 0) return { value: '—', threshold: undefined, pass: undefined }
+  const ratio = numerator / denominator
+  return {
+    value: pct(ratio),
+    threshold: `${op === '<=' ? '≤' : '≥'} ${threshold * 100}%`,
+    pass: op === '<=' ? ratio <= threshold : ratio >= threshold,
+  }
 }

@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server'
 import { screenFinancials } from '@/lib/engine'
 import { supabase } from '@/lib/supabase'
-import type { CompanyFinancials } from '@/lib/types'
+import type { CompanyFinancials, Violation } from '@/lib/types'
 
 const USER_AGENTS = [
   'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36',
@@ -94,6 +94,10 @@ function timeseriesUrl(ticker: string, crumb: string): string {
   return `https://query2.finance.yahoo.com/ws/fundamentals-timeseries/v1/finance/timeseries/${encodeURIComponent(ticker)}?type=${TIMESERIES_TYPE_PARAM}&period1=0&period2=${Math.floor(Date.now() / 1000)}&crumb=${encodeURIComponent(crumb)}`
 }
 
+function priceOnlyUrl(ticker: string, crumb: string): string {
+  return `https://query2.finance.yahoo.com/v10/finance/quoteSummary/${encodeURIComponent(ticker)}?modules=price&crumb=${encodeURIComponent(crumb)}`
+}
+
 async function fetchData(ticker: string) {
   const { crumb, cookie, ua } = await getCrumb()
   // Reuse the same UA that obtained the crumb — Yahoo correlates UA + cookie
@@ -145,13 +149,44 @@ async function fetchData(ticker: string) {
   return { summary, ts }
 }
 
+// ─── Tier 2: Lightweight price-only fetch ───────────────────────────
+
+interface PriceData {
+  marketCap: number
+}
+
+async function fetchPriceData(ticker: string): Promise<PriceData | null> {
+  try {
+    const { crumb, cookie, ua } = await getCrumb()
+    const headers = { 'User-Agent': ua, Cookie: cookie }
+    let res = await fetch(priceOnlyUrl(ticker, crumb), { headers })
+
+    if (res.status === 429) {
+      await new Promise(r => setTimeout(r, 1500))
+      res = await fetch(priceOnlyUrl(ticker, crumb).replace('query2', 'query1'), { headers })
+    }
+
+    if (!res.ok) return null
+    const json = await res.json()
+    const price = json?.quoteSummary?.result?.[0]?.price
+    if (!price) return null
+
+    return {
+      marketCap: price.marketCap?.raw ?? 0,
+    }
+  } catch {
+    return null
+  }
+}
+
 // ─── Cache Helpers ──────────────────────────────────────────────────
 
-const CACHE_TTL_DAYS = 7
+// Tier 1: Hot cache — 24 hour TTL
+const CACHE_TTL_HOURS = 24
 
 async function getCachedReport(ticker: string) {
   if (!supabase) return null
-  const cutoff = new Date(Date.now() - CACHE_TTL_DAYS * 24 * 60 * 60 * 1000).toISOString()
+  const cutoff = new Date(Date.now() - CACHE_TTL_HOURS * 60 * 60 * 1000).toISOString()
   const { data } = await supabase
     .from('screening_cache')
     .select('report')
@@ -169,12 +204,70 @@ async function cacheReport(ticker: string, report: Record<string, unknown>, fina
   )
 }
 
+// Tier 2: Stock screenings DB lookup
+
+interface StockScreeningRow {
+  ticker: string
+  status: string
+  sector: string | null
+  industry: string | null
+  violations: Violation[] | null
+  raw_financials: {
+    market_cap: number
+    total_debt: number
+    interest_bearing_deposits: number
+    prohibited_income: number
+    total_income: number
+    cash: number
+    receivables: number
+    total_assets: number
+  } | null
+  screened_at: string
+}
+
+const SCREENING_SELECT = 'ticker, status, sector, industry, violations, raw_financials, screened_at'
+
+async function getStockScreening(ticker: string): Promise<StockScreeningRow | null> {
+  if (!supabase) return null
+  const { data } = await supabase
+    .from('stock_screenings')
+    .select(SCREENING_SELECT)
+    .eq('ticker', ticker)
+    .neq('status', 'error')
+    .single()
+  return (data as StockScreeningRow | null) ?? null
+}
+
+function reconstructFromDb(row: StockScreeningRow, priceData: PriceData | null) {
+  const rf = row.raw_financials!
+  // Use live market cap if available, otherwise fall back to DB value
+  const liveMarketCap = priceData?.marketCap || rf.market_cap
+
+  const financials: CompanyFinancials = {
+    ticker: row.ticker,
+    sector: row.sector ?? '',
+    industry: row.industry ?? '',
+    market_cap: liveMarketCap,
+    total_debt: rf.total_debt,
+    interest_bearing_deposits: rf.interest_bearing_deposits,
+    prohibited_income: rf.prohibited_income,
+    prohibited_income_source: '',
+    total_income: rf.total_income,
+    cash: rf.cash,
+    receivables: rf.receivables,
+    total_assets: rf.total_assets,
+  }
+
+  // Re-run screening engine with live market cap so ratios are current
+  return screenFinancials(financials)
+}
+
 // ─── Route Handler ───────────────────────────────────────────────────
 
 export async function POST(request: Request) {
   try {
     const body = await request.json()
-    const { ticker, manual } = body
+    const { ticker, manual, fast } = body
 
     let financials: CompanyFinancials
 
@@ -183,12 +276,39 @@ export async function POST(request: Request) {
     } else {
       const upperTicker = ticker.toUpperCase()
 
-      // Check Supabase cache first
+      // ── Tier 1: Hot cache (< 24h) ──
       const cached = await getCachedReport(upperTicker)
       if (cached) {
+        console.log(`[screen] ${upperTicker} → Tier 1 (hot cache)`)
         return NextResponse.json({ ...cached, cached: true })
       }
 
+      // ── Tier 2: Stock screenings DB + live price ──
+      const screening = await getStockScreening(upperTicker)
+      if (screening?.raw_financials && screening.raw_financials.total_assets > 0) {
+        console.log(`[screen] ${upperTicker} → Tier 2 (DB${fast ? ', no live price' : ' + live price'})`)
+        const priceData = fast ? null : await fetchPriceData(upperTicker)
+        const report = reconstructFromDb(screening, priceData)
+
+        // Write back to Tier 1 hot cache (skip for fast mode — stale market cap)
+        if (!fast) {
+          cacheReport(
+            upperTicker,
+            report as unknown as Record<string, unknown>,
+            report.financials as unknown as Record<string, unknown>,
+          ).catch(() => {})
+        }
+
+        return NextResponse.json({ ...report, screened_at: screening.screened_at })
+      }
+
+      // ── Fast mode: no Tier 3 fallback ──
+      if (fast) {
+        throw new Error(`'${upperTicker}' is not available in fast mode. Try the main screener.`)
+      }
+
+      // ── Tier 3: Full Yahoo Finance fetch ──
+      console.log(`[screen] ${upperTicker} → Tier 3 (full Yahoo fetch)`)
       let result: { summary: Record<string, any> | null; ts: Record<string, number> }
 
       try {
@@ -245,6 +365,12 @@ export async function POST(request: Request) {
 
       const inc = summary?.incomeStatementHistory?.incomeStatementHistory?.[0]
       const totalIncome = inc?.totalRevenue?.raw || ts.annualTotalRevenue || fd?.totalRevenue?.raw || 0
+
+      // If Yahoo returned a response but no actual financial data, error out
+      // rather than showing a bogus all-zeros result
+      if (marketCap === 0 && totalAssets === 0 && totalDebt === 0) {
+        throw new Error(`No financial data available for '${ticker.toUpperCase()}'. Yahoo Finance may be rate limiting — please wait a moment and try again.`)
+      }
 
       financials = {
         ticker: ticker.toUpperCase(),

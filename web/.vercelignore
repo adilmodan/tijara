@@ -1,5 +1,16 @@
+# Docs & tests (not needed for deployment)
 docs/
 tests/
+
+# Config & metadata
 .claude/
 *.md
 !README.md
+
+# Python (not deployed)
+aaoifi/
+*.py
+pyproject.toml
+
+# Environment
+.env*

@@ -59,16 +59,41 @@ def fetch_financials(ticker: str) -> CompanyFinancials:
         cash = _safe_get(latest_bs, "Cash And Cash Equivalents")
         receivables = _safe_get(latest_bs, "Receivables")
         total_assets = _safe_get(latest_bs, "Total Assets")
+
+        # Interest-bearing deposits: proxy via short + long term investments
+        # (same approach as the web app's Yahoo Finance timeseries mapping)
+        interest_bearing_deposits = (
+            _safe_get(latest_bs, "Other Short Term Investments")
+            + _safe_get(latest_bs, "Long Term Investments")
+            + _safe_get(latest_bs, "Investments And Advances")
+        )
     else:
         total_debt = cash = receivables = total_assets = 0.0
+        interest_bearing_deposits = 0.0
         logger.warning("No balance sheet data for %s", ticker)
 
     # Income statement: use most recent annual filing
     inc = stock.income_stmt
     total_income = 0.0
+    prohibited_income = 0.0
     if inc is not None and not inc.empty:
         latest_inc = inc.iloc[:, 0]
         total_income = _safe_get(latest_inc, "Total Revenue")
+
+        # Prohibited income: interest income earned by the company
+        # Fallback chain matching the web app's approach
+        prohibited_income = _safe_get(latest_inc, "Interest Income")
+        if prohibited_income == 0.0:
+            prohibited_income = _safe_get(latest_inc, "Interest Income Non Operating")
+        if prohibited_income == 0.0:
+            net_interest = _safe_get(latest_inc, "Net Interest Income")
+            interest_expense = abs(_safe_get(latest_inc, "Interest Expense"))
+            if net_interest != 0.0 or interest_expense != 0.0:
+                prohibited_income = net_interest + interest_expense
+        if prohibited_income == 0.0:
+            prohibited_income = _safe_get(latest_inc, "Net Non Operating Interest Income Expense")
+        # Clamp to >= 0 (negative interest income is not meaningful here)
+        prohibited_income = max(0.0, prohibited_income)
 
     return CompanyFinancials(
         ticker=ticker,
@@ -76,8 +101,8 @@ def fetch_financials(ticker: str) -> CompanyFinancials:
         industry=info.get("industry", ""),
         market_cap=info.get("marketCap", 0.0),
         total_debt=total_debt,
-        interest_bearing_deposits=0.0,  # Not available from yfinance
-        prohibited_income=0.0,          # Requires manual classification
+        interest_bearing_deposits=interest_bearing_deposits,
+        prohibited_income=prohibited_income,
         total_income=total_income,
         cash=cash,
         receivables=receivables,

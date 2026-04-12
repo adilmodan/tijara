@@ -1,10 +1,14 @@
 node_modules/
 .next/
 out/
-.vercel
+.vercel/
 *.tsbuildinfo
 next-env.d.ts
 
 # Environment secrets
 .env.local
 .env*.local
+.env
+
+# macOS
+.DS_Store

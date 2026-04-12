@@ -5,13 +5,13 @@ The top-level entry point for the AAOIFI Shari'ah Compliance Engine. This module
 composes the individual screening modules into a complete pipeline:
 
     1. Fetch financial data (data.py)
-    2. Qualitative sector screening (qualitative.py) — binary hard stop
+    2. Qualitative sector screening (qualitative.py) — hard stop
     3. Quantitative financial ratio screening (quantitative.py)
     4. Tangible asset composition check (tangibility.py)
     5. Aggregate results into FullScreeningReport
 
-The pipeline short-circuits: if the qualitative check fails, no quantitative
-analysis is performed — the stock is unconditionally non-compliant.
+The pipeline short-circuits on qualitative failure: if the sector is prohibited,
+quantitative and tangibility checks are skipped.
 
 Contract validation (contractual.py) and Zakah computation (zakah.py) are
 exposed as standalone functions since they operate on different input domains.
@@ -47,7 +47,7 @@ def screen_stock(ticker: str) -> FullScreeningReport:
     """Run the full AAOIFI compliance screening pipeline on a stock ticker.
 
     Fetches financial data from Yahoo Finance, then executes all screening
-    modules in sequence. Short-circuits on qualitative failure.
+    modules in sequence.
 
     Args:
         ticker: Stock ticker symbol (e.g., "AAPL", "MSFT", "2222.SR").
@@ -76,7 +76,7 @@ def screen_financials(financials: CompanyFinancials) -> FullScreeningReport:
     """
     all_violations: list[Violation] = []
 
-    # --- Module I: Qualitative Sector Screening (binary hard stop) ---
+    # --- Module I: Qualitative Sector Screening (hard stop) ---
     qual_result = screen_sector(financials.sector, financials.industry)
     if qual_result.status == ComplianceStatus.NON_COMPLIANT:
         return FullScreeningReport(

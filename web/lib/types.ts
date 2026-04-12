@@ -46,6 +46,8 @@ export interface FullScreeningReport {
   quantitative: ScreeningResult | null
   tangibility: ScreeningResult | null
   violations: Violation[]
+  screened_at?: string
+  cached?: boolean
 }
 
 export interface ContractInput {

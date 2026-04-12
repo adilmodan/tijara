@@ -143,7 +143,7 @@ export function screenTangibility(cash: number, receivables: number, totalAssets
 export function screenFinancials(financials: CompanyFinancials): FullScreeningReport {
   const allViolations: Violation[] = []
 
-  // Module I: Qualitative (binary hard stop)
+  // Module I: Qualitative (hard stop)
   const qualResult = screenSector(financials.sector, financials.industry)
   if (qualResult.status === 'NON-COMPLIANT') {
     return {
